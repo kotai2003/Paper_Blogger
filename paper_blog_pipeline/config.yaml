@@ -1,0 +1,29 @@
+# ============================================================
+# Paper Blogger パイプライン設定
+# ============================================================
+# このファイルで全オプションのデフォルト値を管理します。
+# CLI引数で指定した場合はCLI側が優先されます。
+
+# --- パス設定 ---
+input_dir: "input"          # PDFを配置するフォルダ
+output_dir: "output"        # 出力ディレクトリ
+
+# --- Ollama設定 ---
+base_url: "http://localhost:11434/v1"   # Ollama APIベースURL
+model: "minimax-m2.5:cloud"                  # LLM用モデル名  minimax-m2.5:cloud
+vlm_model: null                  # VLM用モデル名 (null = modelと同じ)   qwen3-vl:235b-cloud qwen3.5:397b-cloud
+
+# --- 図解析設定 ---
+max_figures: 7              # 解析する図の最大数 (3-5推奨)
+skip_figures: false         # trueにすると図解析をスキップ（高速化）
+
+# ============================================================
+# モデル例
+# ============================================================
+# model: "qwen3.5:cloud"
+# model: "minimax-m2.5:cloud"
+# model: "glm-5:cloud"
+#
+# LLMとVLMで別モデルを使う場合:
+# model: "qwen3.5:cloud"
+# vlm_model: "glm-5:cloud"
