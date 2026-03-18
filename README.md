@@ -4,9 +4,10 @@
 
 LLM/VLMはすべて**Ollama**経由で動作します。
 
-**2つのインターフェース:**
+**3つのインターフェース:**
 - **CLI** — `paper_blog_pipeline/main.py`（バッチ処理向け）
-- **GUI** — `main_gui.py`（Tkinter、商用ソフト風UI）
+- **GUI** — `main_gui.py`（Tkinter、商用ソフト風UI、7ステップ）
+- **GUI Rev002** — `main_gui_rev002.py`（8ステップ：中国語フィルター付き）
 
 ## 出力
 
@@ -41,10 +42,16 @@ ollama pull glm-5:cloud
 ### GUI（推奨）
 
 ```bash
+# 標準版（7ステップ）
 python main_gui.py
+
+# Rev002: 中国語フィルター付き（8ステップ、推奨）
+python main_gui_rev002.py
 ```
 
 Tkinter GUIが起動します。PDFを選択し、「Run Pipeline」ボタンで実行。結果はタブで確認できます。
+
+> **Rev002** は minimax/qwen 等の中国系モデルが生成した記事に混入する中国語簡体字・中国語表現を、パイプライン最終ステップで `gpt-oss:20b-cloud` が自動検収・修正します。
 
 - **Paper Summary** タブ — 落合式1枚スライド要約
 - **Blog Article** タブ — 技術ブログ記事（図のインライン表示対応）
@@ -135,10 +142,12 @@ python paper_blog_pipeline/main.py --config my_config.yaml
 
 ```
 project root/
-    main_gui.py                 # GUI エントリーポイント
+    main_gui.py                 # GUI エントリーポイント（7ステップ）
+    main_gui_rev002.py          # GUI Rev002（8ステップ：中国語フィルター付き）
 
     app/
-        controller.py           # MVC Controller（GUI ↔ Pipeline接続）
+        controller.py           # MVC Controller（7ステップ）
+        controller_rev002.py    # MVC Controller Rev002（8ステップ）
 
     gui/
         main_window.py          # メインウィンドウ（Menu + Toolbar + Pane + StatusBar）
@@ -191,6 +200,7 @@ project root/
             paper_analyzer.py   # 落合式論文理解
             insight_generator.py# 研究インサイト生成
             blog_generator.py   # ブログ記事生成（図の自動挿入後処理付き）
+            chinese_filter.py   # 中国語フィルター（gpt-oss:20b-cloud による検収）
 
         vlm/
             vlm_interface.py    # Ollama VLMインターフェース
@@ -243,6 +253,10 @@ PDF
  |
  v
 [Step 7] ブログ記事生成 ---- 公開品質のMarkdown技術ブログ
+ |
+ v
+[Step 8] 中国語フィルター ---- gpt-oss:20b-cloud による検収
+                               (Rev002のみ。記事・要約の中国語混入を自動修正)
 ```
 
 ## 重要図の自動選択
@@ -367,3 +381,4 @@ Ollamaで利用可能なモデルであれば何でも使用できます。
 | `qwen3.5:cloud` | テキスト分析・生成 |
 | `glm-5:cloud` | テキスト分析・生成 |
 | `qwen3-vl:235b-cloud` | 図解析VLM（デフォルト） |
+| `gpt-oss:20b-cloud` | 中国語フィルター検収（Rev002 Step 8、固定） |

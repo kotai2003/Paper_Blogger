@@ -6,9 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Research paper (PDF) to technical blog article generation pipeline implementing the **Ochiai Yoichi paper reading framework**. PDFs go into `input/`, and the system produces Markdown blog articles and one-slide summaries in `output/`. All LLM/VLM calls go through **Ollama** (OpenAI-compatible API).
 
-The project has two interfaces:
+The project has three interfaces:
 - **CLI** — `paper_blog_pipeline/main.py` (batch processing)
-- **GUI** — `main_gui.py` (Tkinter + ttk, commercial-grade UI)
+- **GUI** — `main_gui.py` (Tkinter + ttk, commercial-grade UI, 7-step pipeline)
+- **GUI Rev002** — `main_gui_rev002.py` (8-step pipeline with Chinese text filter)
 
 ## Commands
 
@@ -16,8 +17,11 @@ The project has two interfaces:
 # Install dependencies
 pip install -r paper_blog_pipeline/requirements.txt
 
-# Run GUI
+# Run GUI (7-step)
 python main_gui.py
+
+# Run GUI Rev002 (8-step, with Chinese filter)
+python main_gui_rev002.py
 
 # Run the pipeline — batch mode (all PDFs in input/ folder)
 python paper_blog_pipeline/main.py
@@ -87,9 +91,9 @@ Use `--config path/to/other.yaml` to load a different config file.
 
 ## Architecture
 
-### Pipeline (7 sequential steps)
+### Pipeline (7 steps CLI / 8 steps GUI Rev002)
 
-Orchestrated by `paper_blog_pipeline/main.py:run_pipeline()`:
+Orchestrated by `paper_blog_pipeline/main.py:run_pipeline()` (CLI) or `app/controller_rev002.py` (GUI Rev002):
 
 1. **PDF Parse** (`parser/pdf_parser.py`) — PyMuPDF extracts title, authors, abstract, sections. `ParsedPaper` has fuzzy section matching helpers (`get_conclusion()`, `get_experiments()`, `get_related_work()`, `get_method()`).
 
@@ -105,11 +109,15 @@ Orchestrated by `paper_blog_pipeline/main.py:run_pipeline()`:
 
 7. **Blog Generation** (`llm/blog_generator.py`) — Produces a publication-quality Markdown blog article with figure references. Post-processing via `_ensure_figures_in_article()` guarantees all analyzed figures are embedded in the article markdown even if the LLM omitted them.
 
+8. **Chinese Text Filter** (`llm/chinese_filter.py`, Rev002 only) — Sends the completed article and summary to `gpt-oss:20b-cloud` for review. Detects and fixes Chinese simplified characters and Chinese expressions that leaked from minimax/qwen models. This is an LLM-based filter on top of the rule-based `_sanitize_japanese()` in `ollama_client.py`.
+
 ### GUI (MVC, Tkinter + ttk)
 
 ```
-main_gui.py                     # Entry point
-app/controller.py               # MVC Controller — connects GUI to pipeline
+main_gui.py                     # Entry point (7-step)
+main_gui_rev002.py              # Entry point Rev002 (8-step, Chinese filter)
+app/controller.py               # MVC Controller (7-step)
+app/controller_rev002.py        # MVC Controller Rev002 (8-step, Chinese filter)
 gui/main_window.py              # Root frame: Menu + Toolbar + PanedWindow + StatusBar
 gui/menu_bar.py                 # File / Run / Settings / Help menus
 gui/toolbar.py                  # Open / Run / Stop / Save / Open Output buttons + progress bar
@@ -164,7 +172,7 @@ Compiles `.py` → `.pyd` (native DLL) for reverse engineering protection. Targe
 - `app/`, `gui/`, `gui/tabs/`, `widgets/`, `style/`
 - `paper_blog_pipeline/` and all subpackages (`parser/`, `figures/`, `llm/`, `vlm/`, `slide/`)
 
-Excluded from compilation: `main_gui.py` (entry point), `paper_blog_pipeline/main.py` (CLI entry), all `__init__.py`.
+Excluded from compilation: `main_gui.py`, `main_gui_rev002.py` (entry points), `paper_blog_pipeline/main.py` (CLI entry), all `__init__.py`.
 
 ### Anti-Reverse-Engineering Layers
 
@@ -235,8 +243,17 @@ Docstring style: **NumPy** format. mkdocstrings scans both `.` and `paper_blog_p
 - **Config-driven**: `config.yaml` holds all defaults. `main.py` loads it with `_load_config()`, then CLI args override. GUI reads the same config on startup. Paths in config are resolved relative to `paper_blog_pipeline/`.
 - **Figure insertion guarantee**: `blog_generator.py` post-processes LLM output to ensure all analyzed figures appear in the article. Figures are classified by section type (method/result/other) and inserted at the appropriate section end if the LLM didn't include them.
 - Prompts are embedded in Python modules as constants and also stored as reference templates in `prompts/`.
+- **Chinese text filter (Rev002)**: `llm/chinese_filter.py` sends the completed article/summary to `gpt-oss:20b-cloud` (hardcoded model) for LLM-based review. This runs after the rule-based `_sanitize_japanese()` filter in `ollama_client.py`, providing a two-layer defense against Chinese text leakage from minimax/qwen models.
 - The project uses `sys.path.insert` in `main.py` and `main_gui.py` — all modules use package-relative imports from their respective roots.
 - `main.py` supports both single-PDF and batch modes. With no positional argument, it discovers all `*.pdf` files in the `input/` folder.
+
+## Skills (`skills/`)
+
+Claude Code skills (`.md` files in `skills/`) provide behavioral guidelines that can be invoked during development.
+
+| Skill | File | Purpose |
+|-------|------|---------|
+| `karpathy-guidelines` | `skills/SKILL.md` | Behavioral guidelines derived from Karpathy's LLM coding pitfalls — think before coding, simplicity first, surgical changes, goal-driven execution |
 
 ## Language
 

@@ -37,11 +37,12 @@ class LeftPanel(ttk.Frame):
         # Model
         ttk.Label(settings_frame, text="LLM Model",
                   style="Sidebar.Small.TLabel").pack(anchor="w")
-        self.model_var = tk.StringVar(value="minimax-m2.5:cloud")
+        self.model_var = tk.StringVar(value="gpt-oss:120b-cloud")
         self.model_combo = ttk.Combobox(
             settings_frame,
             textvariable=self.model_var,
             values=[
+                "gpt-oss:120b-cloud",
                 "minimax-m2.5:cloud",
                 "qwen3.5:cloud",
                 "glm-5:cloud",
