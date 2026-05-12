@@ -77,23 +77,33 @@ def extract_figures(pdf_path: str | Path, output_dir: str | Path) -> list[Extrac
     doc = pymupdf.open(str(pdf_path))
     extracted = []
     image_counter = 0
+    seen_xrefs: set[int] = set()        # 同一 xref の重複抽出を防止
+    used_caption_ids: set[str] = set()  # 同じキャプションを複数画像へ割り当てない
 
-    # 全ページからキャプション情報を収集
+    # 全ページからキャプション情報を収集（同一 figure_id は最初の出現のみ採用）
     all_captions = []
+    seen_caption_ids: set[str] = set()
     for page in doc:
-        page_captions = _extract_captions(page.get_text())
-        for cap in page_captions:
+        for cap in _extract_captions(page.get_text()):
+            if cap["figure_id"] in seen_caption_ids:
+                continue
+            seen_caption_ids.add(cap["figure_id"])
             cap["page"] = page.number
-        all_captions.extend(page_captions)
+            all_captions.append(cap)
 
     # 各ページから画像を抽出
-    caption_index = 0
     for page_num in range(len(doc)):
         page = doc[page_num]
         image_list = page.get_images(full=True)
 
         for img_index, img_info in enumerate(image_list):
             xref = img_info[0]
+
+            # 同一 xref が複数ページに参照されている場合の重複抽出を防止
+            if xref in seen_xrefs:
+                continue
+            seen_xrefs.add(xref)
+
             try:
                 base_image = doc.extract_image(xref)
             except Exception:
@@ -108,25 +118,25 @@ def extract_figures(pdf_path: str | Path, output_dir: str | Path) -> list[Extrac
             if width < 100 or height < 100:
                 continue
 
-            image_counter += 1
-
-            # キャプションとの紐付け
+            # キャプションとの紐付け: ページ一致かつ未使用のもののみを採用
             caption_info = None
             for cap in all_captions:
-                if cap["page"] == page_num and cap not in [e.__dict__ for e in extracted]:
+                if cap["page"] == page_num and cap["figure_id"] not in used_caption_ids:
                     caption_info = cap
+                    used_caption_ids.add(cap["figure_id"])
                     break
 
-            if caption_info:
-                fig_id = caption_info["figure_id"]
-                caption = caption_info["caption"]
-                fig_type = caption_info["figure_type"]
-                filename = f"{fig_id.lower().replace(' ', '_')}.{image_ext}"
-            else:
-                fig_id = f"Figure {image_counter}"
-                caption = ""
-                fig_type = "figure"
-                filename = f"image_{image_counter}.{image_ext}"
+            # キャプションが紐付かない画像は orphan としてスキップ
+            # (装飾・数式断片・ベクターグラフィック等が大量に extracted へ入るのを防ぐ。
+            #  本物の figure_id と衝突する "Figure {image_counter}" の生成も回避できる)
+            if caption_info is None:
+                continue
+
+            image_counter += 1
+            fig_id = caption_info["figure_id"]
+            caption = caption_info["caption"]
+            fig_type = caption_info["figure_type"]
+            filename = f"{fig_id.lower().replace(' ', '_')}.{image_ext}"
 
             # 画像を保存
             image_path = output_dir / filename

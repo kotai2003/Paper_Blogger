@@ -78,7 +78,7 @@ a = Analysis(
         'slide',
         'slide.ochiai_summary',
         # GUI モジュール（Cython .pyd 版）
-        'app.controller',
+        'app.controller_rev004',  # Rev004: main_gui.py からインポートされるコントローラー
         'gui.main_window',
         'gui.left_panel',
         'gui.right_panel',
@@ -107,7 +107,9 @@ a = Analysis(
         'IPython', 'ipykernel', 'ipywidgets', 'nbconvert', 'nbformat',
         # テスト・開発ツール
         'pytest', 'unittest', 'doctest',
-        'setuptools', 'distutils', 'pip', 'wheel', 'pkg_resources',
+        # Python 3.12 で distutils は setuptools 提供に変わったため除外できない
+        # (hook-distutils.py が alias 登録時に衝突する)
+        'pip', 'wheel',
         # 不要な標準ライブラリ
         'xmlrpc', 'pydoc', 'pydoc_data', 'lib2to3',
         'ensurepip', 'venv', 'turtledemo', 'test', 'idlelib',

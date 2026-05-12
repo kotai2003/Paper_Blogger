@@ -5,7 +5,16 @@
       "Bash(taskkill:*)",
       "Bash(rm:*)",
       "Bash(pip install:*)",
-      "Bash(mkdocs build:*)"
+      "Bash(mkdocs build:*)",
+      "Bash(ollama list *)",
+      "Bash(python -m py_compile \"main_gui_rev004.py\")",
+      "Bash(python -m py_compile \"app/controller_rev004.py\")",
+      "Bash(python *)",
+      "Bash(powershell *)",
+      "Bash(pip show *)",
+      "Bash(pip list *)",
+      "Bash(findstr /i mupdf)",
+      "Bash(ollama pull *)"
     ]
   }
 }

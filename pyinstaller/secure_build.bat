@@ -36,8 +36,11 @@ echo [2/5] 前回の .pyd / build 成果物をクリーンアップ...
 if exist "%BUILD_OUT%\dist" rd /s /q "%BUILD_OUT%\dist" >nul 2>&1
 if exist "%BUILD_OUT%\build" rd /s /q "%BUILD_OUT%\build" >nul 2>&1
 if not exist "%BUILD_OUT%" mkdir "%BUILD_OUT%"
-REM Cython の build ディレクトリ削除
+REM Cython の build ディレクトリ削除（プロジェクトルート側 / 短い temp 側）
 if exist build rd /s /q build >nul 2>&1
+REM MAX_PATH(260) 回避用: Cython 中間ファイルを短いパスに出力する
+set "CYTHON_TMP=%LOCALAPPDATA%\pb_cy_tmp"
+if exist "%CYTHON_TMP%" rd /s /q "%CYTHON_TMP%" >nul 2>&1
 REM 既存 .pyd を削除（再コンパイル用）
 for /R %%f in (*.pyd) do (
     echo   [DEL] %%f
@@ -46,8 +49,9 @@ for /R %%f in (*.pyd) do (
 
 echo.
 echo [3/5] Cython コンパイル (.py → .pyd)...
+echo   Build temp: %CYTHON_TMP%
 echo ============================================
-python build_tools/setup_cython.py build_ext --inplace
+python build_tools/setup_cython.py build_ext --inplace --build-temp "%CYTHON_TMP%"
 
 if errorlevel 1 (
     echo.
@@ -58,6 +62,7 @@ if errorlevel 1 (
 
 REM Cython build ディレクトリ削除
 if exist build rd /s /q build >nul 2>&1
+if exist "%CYTHON_TMP%" rd /s /q "%CYTHON_TMP%" >nul 2>&1
 
 echo.
 echo [4/5] PyInstaller ビルド...

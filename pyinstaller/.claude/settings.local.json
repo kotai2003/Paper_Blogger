@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd /c \"secure_build.bat < nul\")",
+      "PowerShell(where.exe python; python --version; python -c \"import Cython; print\\('Cython', Cython.__version__\\)\" 2>&1; python -c \"import PyInstaller; print\\('PyInstaller', PyInstaller.__version__\\)\" 2>&1)",
+      "PowerShell(Test-Path *)",
+      "Read(//c/Users/seong/AppData/Local/paper_blogger_build/dist/paper_blogger/**)"
+    ]
+  }
+}

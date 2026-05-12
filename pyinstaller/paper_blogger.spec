@@ -35,6 +35,8 @@ a = Analysis(
         'PIL',            # Pillow
         'PIL.Image',
         'PIL.ImageTk',
+        # GUI コントローラー（Rev004: main_gui.py から直接インポート）
+        'app.controller_rev004',
         # paper_blog_pipeline サブモジュール（sys.path.insert による動的インポート対応）
         'parser',
         'parser.pdf_parser',
@@ -82,11 +84,10 @@ a = Analysis(
         'unittest',
         'doctest',
         # その他不要
-        'setuptools',
-        'distutils',
+        # Python 3.12 で distutils は setuptools 提供に変わったため除外できない
+        # (hook-distutils.py が alias 登録時に衝突する)
         'pip',
         'wheel',
-        'pkg_resources',
         'xmlrpc',
         'pydoc',
         'pydoc_data',
